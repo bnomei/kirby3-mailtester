@@ -1,0 +1,8 @@
+{
+  "from": "b@bnomei.com",
+  "subject": "Test Subject",
+  "body": {
+    "text": "Text",
+    "html": "<b>HTML</b>"
+  }
+}

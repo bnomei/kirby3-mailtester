@@ -1,0 +1,7 @@
+blueprint: site
+
+fields:
+  mailtester_spam:
+    type: janitor
+    command: 'mailtester:spam'
+    label: Test

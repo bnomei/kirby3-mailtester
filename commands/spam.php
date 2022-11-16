@@ -5,20 +5,15 @@ use Kirby\CLI\CLI;
 use Kirby\Http\Remote;
 use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
+use Kirby\Uuid\Uuid;
 
 return [
-    'description' => 'mail-tester.com Spam rating for email send from a page',
+    'description' => 'mail-tester.com Spam rating for email',
     'args' => [
-            'username' => [
-                'longPrefix' => 'username',
-                'description' => 'mail-tester.com username',
+            'to' => [
+                'longPrefix' => 'to',
+                'description' => 'mail-tester.com email',
                 'defaultValue' => '', // try .env
-                'castTo' => 'string',
-            ],
-            'server' => [
-                'longPrefix' => 'server',
-                'description' => 'mail-tester.com email server',
-                'defaultValue' => '', // try .env USERNAME@srv1.mail-tester.com
                 'castTo' => 'string',
             ],
             'limit' => [
@@ -35,39 +30,38 @@ return [
             ],
         ] + Janitor::ARGS, // page, file, user, site, data
     'command' => static function (CLI $cli): void {
-        $username = $cli->arg('username');
-        if (empty($username)) {
-            $username = getenv('MAILTESTER_USERNAME');
+        $to = $cli->arg('to');
+        if (empty($to)) {
+            $to = getenv('MAILTESTER_USERNAME');
         }
 
-        $server = $cli->arg('server');
-        if (empty($server)) {
-            $server = getenv('MAILTESTER_SERVER');
-        }
-        if (empty($server) || $server === false) {
-            $server = 'srv1.mail-tester.com';
+        $spamid = explode('@', $to)[0];
+        if (!Str::contains($spamid, '-')) {
+            $spamid .= '-' . Uuid::generate(9);
         }
 
         // from, subject, body[text,html], transport
         $emailData = $cli->arg('data');
-        $spamid = Str::slug($username . '-' . md5($emailData . time()));
         $emailData = empty($emailData) ? [] : json_decode($emailData, true);
 
-        defined('STDOUT') && $cli->out('Sending email to mail-tester.com...');
+        defined('STDOUT') && $cli->out('Sending email to <' .$to . '> ...');
+
         $success = $cli->kirby()->email(
             $emailData + [
-                'to' => $username . '@' . $server,
+                'to' => $to,
             ]
         )->isSent();
 
         if ($success) {
             defined('STDOUT') && $cli->green('Email send.');
+            defined('STDOUT') && $cli->blue('Report URL: https://www.mail-tester.com/' . $spamid);
+
             $limit = intval($cli->arg('limit'));
             $message = t('mailtester.timeout', 'Timeout');
-            $href = null;
-            $found = false;
+            $mark = 0;
             while ($limit > 0) {
                 defined('STDOUT') && $cli->out('Waiting for response from mail-tester.com...');
+
                 sleep(intval($cli->arg('wait')));
 
                 $result = Remote::get(implode([
@@ -77,27 +71,24 @@ return [
                 ]));
                 $json = $result->json();
                 if ($json['messageId'] !== 0) {
-                    $limit = 0;
+                    defined('STDOUT') && $cli->green('Received a spam report.');
+
+                    $limit = 0; // stop
                     $message = $json['displayedMark'];
-                    $found = true;
-                    if (abs($json['mark']) > 1.5) { // link if rating is BAD
-                        $href = 'https://www.mail-tester.com/' . $spamid;
-                    }
-                    defined('STDOUT') && $cli->green('Recieved a spam report.');
+                    $mark = abs($json['mark']);
                 } else {
                     $limit--;
                 }
             }
 
             $data = [
-                'status' => $found ? 200 : 204,
+                'status' => $mark > 0 ? 200 : 204,
                 'message' => $message,
+                'mark' => $mark,
+                'report' => 'https://www.mail-tester.com/' . $spamid,
             ];
-            if ($href) {
-                $data = $data + [
-                        'message' => $message . '...',
-                        'href' => $href,
-                    ];
+            if ($mark > 1.5) { // open link in panel if rating is BAD
+                $data['open'] = $data['report'];
             }
         } else {
             $data = [

@@ -13,10 +13,11 @@ final class JanitorTest extends TestCase
     {
         $this->markTestSkipped('needs email sending capabilities');
 
+        $to = F::read(__DIR__ . '/fixtures/to.txt');
         $data = F::read(__DIR__ . '/fixtures/email.json');
         $this->assertEquals(
             200,
-            janitor()->command('mailtester:spam --data ' . $data)['status']
+            janitor()->command('mailtester:spam --to ' . $to . ' --data ' . $data)['status']
         );
     }
 }

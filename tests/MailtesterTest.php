@@ -14,7 +14,7 @@ final class JanitorTest extends TestCase
         $this->markTestSkipped('needs email sending capabilities');
 
         $to = F::read(__DIR__ . '/fixtures/to.txt');
-        $data = F::read(__DIR__ . '/fixtures/email.json');
+        $data = json_encode(json_decode(F::read(__DIR__ . '/fixtures/email.json'))); // proper oneliner
         $this->assertEquals(
             200,
             janitor()->command('mailtester:spam --to ' . $to . ' --data ' . $data)['status']

@@ -43,22 +43,31 @@ Using download & copy: download [the latest release of this plugin](https://gith
 
 You need to forward the data you want to send (`from, subject, body[text,html], transport?`) to the command as [JSON string](https://www.php.net/manual/en/function.json-encode.php). The example shows a `$page->emailDataJSON()`-method but that is something you need to implement yourself.
 
-```php
-var_dump(
-    janitor()->command('mailtester:spam --to MT_USERNAME --data {{ page.emailDataJSON }}')
-);
-```
-
 **site/blueprints/default.yml**
 ```yml
 fields:
   mailtester_spam:
     type: janitor
-    command: 'mailtester:spam --to MT_USERNAME --data {{ page.emailDataJSON }}'
-    label: Test
+    command: 'mailtester:spam --to MAILTESTER_USERNAME --data {( page.emailDataJSON )}'
+    label: Test to current User
 ```
 
-### Username
+> Note: The command is using the Janitor-only delayed resolution of query language with `{( query )}` in its panel button for the data argument. The argument will not be resolved on every panel view but only when Janitor receives the api call after the button press.
+
+When calling the command using PHP you need to provide the `page` argument yourself to allow the `data` arguments query to be resolved.
+
+```php
+var_dump(
+    janitor()->command(
+        'mailtester:spam' .
+        ' --to MAILTESTER_USERNAME' .
+        ' --data {{ page.emailDataJSON }}' .
+        ' --page ' . $page->uuid()
+    )
+);
+```
+
+### Username (paid accounts)
 
 You can set your [paid mail-tester.com account](https://www.mail-tester.com/manager/) to an environment variable and let it be loaded it with my [dotenv plugin](https://github.com/bnomei/kirby3-dotenv). Doing that you do not need to provide the `--to` argument in the command.
 

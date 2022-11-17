@@ -3,5 +3,5 @@ blueprint: site
 fields:
   mailtester_spam:
     type: janitor
-    command: 'mailtester:spam'
+    command: 'mailtester:spam --to MAILTESTER_USERNAME --data {( site.emailDataJSON )}'
     label: Test

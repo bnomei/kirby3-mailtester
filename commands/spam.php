@@ -3,9 +3,17 @@
 use Bnomei\Janitor;
 use Kirby\CLI\CLI;
 use Kirby\Http\Remote;
-use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
 use Kirby\Uuid\Uuid;
+
+if (!class_exists('Bnomei\Janitor')) {
+    foreach ([
+                 __DIR__ . '/../kirby3-janitor/classes/Janitor.php',
+                 __DIR__ . '/../tests/site/plugins/kirby3-janitor/classes/Janitor.php',
+             ] as $file) {
+        F::exists($file) && require_once $file;
+    }
+}
 
 return [
     'description' => 'mail-tester.com Spam rating for email',
@@ -44,7 +52,7 @@ return [
         $emailData = $cli->arg('data');
         $emailData = empty($emailData) ? [] : json_decode($emailData, true);
 
-        defined('STDOUT') && $cli->out('Sending email to <' .$to . '> ...');
+        defined('STDOUT') && $cli->out('Sending email to <' . $to . '> ...');
 
         $success = $cli->kirby()->email(
             $emailData + [
@@ -98,9 +106,9 @@ return [
         }
 
         // output for the command line
-        defined('STDOUT') && $href && $cli->blue($href);
+        defined('STDOUT') && $cli->blue($data['report']);
         defined('STDOUT') && (
-            $found ? $cli->success($message) : $cli->error($message)
+            $mark > 0 ? $cli->success($message) : $cli->error($message)
         );
 
         // output for janitor

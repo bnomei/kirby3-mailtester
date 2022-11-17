@@ -19,7 +19,8 @@
         "mail",
         "test",
         "newsletter",
-        "spam"
+        "spam",
+        "spam-detection"
     ],
     "config": {
         "optimize-autoloader": true,

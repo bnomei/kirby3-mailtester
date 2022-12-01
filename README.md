@@ -2,6 +2,9 @@
 
 ![Release](https://flat.badgen.net/packagist/v/bnomei/kirby3-mailtester?color=ae81ff)
 ![Downloads](https://flat.badgen.net/packagist/dt/bnomei/kirby3-mailtester?color=272822)
+[![Build Status](https://flat.badgen.net/travis/bnomei/kirby3-mailtester)](https://travis-ci.com/bnomei/kirby3-mailtester)
+[![Coverage Status](https://flat.badgen.net/coveralls/c/github/bnomei/kirby3-mailtester)](https://coveralls.io/github/bnomei/kirby3-mailtester)
+[![Maintainability](https://flat.badgen.net/codeclimate/maintainability/bnomei/kirby3-mailtester)](https://codeclimate.com/github/bnomei/kirby3-mailtester)
 [![Twitter](https://flat.badgen.net/badge/twitter/bnomei?color=66d9ef)](https://twitter.com/bnomei)
 
 ## Install
@@ -12,15 +15,7 @@ Using composer:
 composer require getkirby/cli bnomei/kirby3-janitor bnomei/kirby3-mailtester
 ```
 
-Using git submodules:
-
-```bash
-git submodule add https://github.com/getkirby/cli.git site/plugins/cli
-git submodule add https://github.com/bnomei/kirby3-janitor.git site/plugins/kirby3-janitor
-git submodule add https://github.com/bnomei/kirby3-mailtester.git site/plugins/kirby3-mailtester
-```
-
-Using download & copy: download [the latest release of this plugin](https://github.com/bnomei/kirby3-mailtester/releases) and [the latest release of the kirby cli](https://github.com/getkirby/cli/releases) then unzip and copy them to `site/plugins`
+Since the Kirby CLI can only be installed with composer using gitsubmodules or installation from ZIP files is not recommended.
 
 ## Commercial Usage
 

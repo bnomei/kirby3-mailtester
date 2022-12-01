@@ -7,7 +7,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use Kirby\Filesystem\F;
 use PHPUnit\Framework\TestCase;
 
-final class JanitorTest extends TestCase
+final class MailtesterTest extends TestCase
 {
     public function testCommand()
     {

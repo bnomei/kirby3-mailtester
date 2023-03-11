@@ -42,6 +42,7 @@ fields:
     type: janitor
     command: 'mailtester:spam --to MAILTESTER_USERNAME --data {( page.emailDataJSON )}'
     label: Test to current User
+    icon: mailtester
 ```
 
 > Note: The command is using the Janitor-only delayed resolution of query language with `{( query )}` in its panel button for the data argument. The argument will not be resolved on every panel view but only when Janitor receives the api call after the button press.

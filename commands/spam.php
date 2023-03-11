@@ -2,7 +2,9 @@
 
 use Bnomei\Janitor;
 use Kirby\CLI\CLI;
+use Kirby\Filesystem\F;
 use Kirby\Http\Remote;
+use Kirby\Toolkit\A;
 use Kirby\Toolkit\Str;
 use Kirby\Uuid\Uuid;
 
@@ -27,7 +29,7 @@ return [
             'limit' => [
                 'longPrefix' => 'limit',
                 'description' => 'get email spam report requests limit',
-                'defaultValue' => 5,
+                'defaultValue' => 10,
                 'castTo' => 'int',
             ],
             'wait' => [
@@ -40,12 +42,13 @@ return [
     'command' => static function (CLI $cli): void {
         $to = $cli->arg('to');
         if (empty($to)) {
-            $to = getenv('MAILTESTER_USERNAME');
+            $to = $cli->kirby()->site()->getenv('MAILTESTER_USERNAME');
+            ray('MAILTESTER_USERNAME');
         }
 
         $spamid = explode('@', $to)[0];
         if (!Str::contains($spamid, '-')) {
-            $spamid .= '-' . Uuid::generate(9);
+            $spamid = $spamid . '-' . Uuid::generate(9);
         }
 
         // from, subject, body[text,html], transport
@@ -56,59 +59,74 @@ return [
 
         $success = $cli->kirby()->email(
             $emailData + [
-                'to' => $to,
-            ]
+                'to' => $spamid . '@srv1.mail-tester.com',
+            ],
         )->isSent();
 
-        if ($success) {
-            defined('STDOUT') && $cli->green('Email send.');
-            defined('STDOUT') && $cli->blue('Report URL: https://www.mail-tester.com/' . $spamid);
+        try {
+            if ($success) {
+                defined('STDOUT') && $cli->green('Email send.');
+                defined('STDOUT') && $cli->blue('Report URL: https://www.mail-tester.com/' . $spamid);
 
-            $limit = intval($cli->arg('limit'));
-            $message = t('mailtester.timeout', 'Timeout');
-            $mark = 0;
-            while ($limit > 0) {
-                defined('STDOUT') && $cli->out('Waiting for response from mail-tester.com...');
+                $limit = intval($cli->arg('limit'));
+                $message = t('mailtester.timeout', 'Timeout');
+                $mark = 0;
+                while ($limit > 0) {
+                    defined('STDOUT') && $cli->out('Waiting for response from mail-tester.com...');
 
-                sleep(intval($cli->arg('wait')));
+                    sleep(intval($cli->arg('wait')));
 
-                $result = Remote::get(implode([
-                    'https://www.mail-tester.com/',
-                    $spamid,
-                    '&format=json',
-                ]));
-                $json = $result->json();
-                if ($json['messageId'] !== 0) {
-                    defined('STDOUT') && $cli->green('Received a spam report.');
+                    // can set longer timeout if needed
+                    // https://getkirby.com/docs/reference/system/options/remote
+                    $result = Remote::get(implode([
+                        'https://www.mail-tester.com/',
+                        $spamid,
+                        '&format=json',
+                    ]));
 
-                    $limit = 0; // stop
-                    $message = $json['displayedMark'];
-                    $mark = abs($json['mark']);
-                } else {
-                    $limit--;
+                    $json = $result->json();
+                    $messageId = A::get($json, 'messageId');
+                    if ($messageId && $messageId !== 0) {
+                        defined('STDOUT') && $cli->green('Received a spam report.');
+
+                        $limit = 0; // stop
+                        $message = $json['displayedMark'];
+                        $mark = abs($json['mark']);
+                    } else {
+                        $limit--;
+                    }
                 }
-            }
 
-            $data = [
-                'status' => $mark > 0 ? 200 : 204,
-                'message' => $message,
-                'mark' => $mark,
-                'report' => 'https://www.mail-tester.com/' . $spamid,
-            ];
-            if ($mark > 1.5) { // open link in panel if rating is BAD
-                $data['open'] = $data['report'];
+                $data = [
+                    'status' => $mark > 0 ? 200 : 204,
+                    'label' => $message,
+                    'backgroundColor' => 'var(--color-positive)',
+                    'icon' => 'check',
+                    'mark' => $mark,
+                    'report' => 'https://www.mail-tester.com/' . $spamid,
+                ];
+
+                if ($mark > 1.5) { // open link in panel if rating is BAD
+                    $data['open'] = $data['report'];
+                }
+
+            } else {
+                $data = [
+                    'status' => 500,
+                    'message' => t('mailtester.sending-email-failed', 'Sending email failed'),
+                ];
             }
-        } else {
+        } catch (\Exception $exception) {
             $data = [
                 'status' => 500,
-                'message' => t('mailtester.sending-email-failed', 'Sending email failed'),
+                'message' => $exception->getMessage(),
             ];
         }
 
         // output for the command line
         defined('STDOUT') && $cli->blue($data['report']);
         defined('STDOUT') && (
-            $mark > 0 ? $cli->success($message) : $cli->error($message)
+        $mark > 0 ? $cli->success($message) : $cli->error($message)
         );
 
         // output for janitor

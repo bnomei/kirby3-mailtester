@@ -43,7 +43,6 @@ return [
         $to = $cli->arg('to');
         if (empty($to)) {
             $to = $cli->kirby()->site()->getenv('MAILTESTER_USERNAME');
-            ray('MAILTESTER_USERNAME');
         }
 
         $spamid = explode('@', $to)[0];

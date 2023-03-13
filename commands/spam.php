@@ -108,7 +108,6 @@ return [
                 if ($mark > 1.5) { // open link in panel if rating is BAD
                     $data['open'] = $data['report'];
                 }
-
             } else {
                 $data = [
                     'status' => 500,
@@ -125,7 +124,7 @@ return [
         // output for the command line
         defined('STDOUT') && $cli->blue($data['report']);
         defined('STDOUT') && (
-        $mark > 0 ? $cli->success($message) : $cli->error($message)
+            $mark > 0 ? $cli->success($message) : $cli->error($message)
         );
 
         // output for janitor
